@@ -694,7 +694,7 @@ export default function Home() {
           </div>
         </section>
 
-        <AdSlot size="leaderboard" className="py-6 px-4" adSlot="" />
+        <AdSlot size="leaderboard" className="py-6 px-4" adSlot="6997057063" />
 
         <section className="py-16 md:py-20 bg-card">
           <div className="max-w-6xl mx-auto px-4 md:px-8">
@@ -728,7 +728,7 @@ export default function Home() {
           </div>
         </section>
 
-        <AdSlot size="leaderboard" className="py-6 px-4" adSlot="" />
+        <AdSlot size="leaderboard" className="py-6 px-4" adSlot="6997057063" />
 
         <section className="py-16 md:py-20">
           <div className="max-w-6xl mx-auto px-4 md:px-8">
@@ -768,8 +768,9 @@ export default function Home() {
           </div>
         </section>
 
-        <AdSlot size="leaderboard" className="py-6 px-4" adSlot="" />
+        <AdSlot size="leaderboard" className="py-6 px-4" adSlot="6997057063" />
 
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
         <footer className="border-t border-border py-8 md:py-12">
           <div className="max-w-6xl mx-auto px-4 md:px-8">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
