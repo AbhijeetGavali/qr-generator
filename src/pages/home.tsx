@@ -780,21 +780,21 @@ export default function Home() {
               </div>
               <div className="flex flex-wrap gap-6 text-sm text-muted-foreground justify-center">
                 <a
-                  href="#"
+                  href="/privacy-policy"
                   className="hover:text-foreground transition-colors"
                   data-testid="link-privacy"
                 >
                   Privacy Policy
                 </a>
                 <a
-                  href="#"
+                  href="/terms-of-service"
                   className="hover:text-foreground transition-colors"
                   data-testid="link-terms"
                 >
                   Terms of Service
                 </a>
                 <a
-                  href="#"
+                  href="/contact"
                   className="hover:text-foreground transition-colors"
                   data-testid="link-contact"
                 >
