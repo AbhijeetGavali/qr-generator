@@ -25,6 +25,17 @@ import {
 } from "lucide-react";
 import UseCasesSection from "@/components/UseCasesSection";
 
+type QRType =
+  | "url"
+  | "text"
+  | "wifi"
+  | "vcard"
+  | "email"
+  | "sms"
+  | "whatsapp"
+  | "event"
+  | "location";
+
 interface QRHistoryItem {
   id: string;
   url: string;
@@ -38,6 +49,8 @@ interface QRHistoryItem {
     logoSize?: number;
     logoShape?: "square" | "rounded" | "circle";
     logoDataUrl?: string; // 🔑 store logo image
+    qrType: QRType;
+    payload: string;
   };
 }
 
@@ -67,6 +80,55 @@ export default function Home() {
   );
   const [size, setSize] = useState(300);
   const [history, setHistory] = useState<QRHistoryItem[]>([]);
+
+  const [qrType, setQrType] = useState<QRType>("url");
+  const [textValue, setTextValue] = useState("");
+
+  const [wifi, setWifi] = useState({
+    ssid: "",
+    password: "",
+    encryption: "WPA", // WPA | WEP | nopass
+    hidden: false,
+  });
+
+  const [vcard, setVcard] = useState({
+    firstName: "",
+    lastName: "",
+    phone: "",
+    email: "",
+    company: "",
+    title: "",
+    website: "",
+  });
+
+  const [email, setEmail] = useState({
+    to: "",
+    subject: "",
+    body: "",
+  });
+
+  const [sms, setSms] = useState({
+    phone: "",
+    message: "",
+  });
+
+  const [whatsapp, setWhatsapp] = useState({
+    phone: "",
+    message: "",
+  });
+
+  const [event, setEvent] = useState({
+    title: "",
+    description: "",
+    location: "",
+    start: "",
+    end: "",
+  });
+
+  const [location, setLocation] = useState({
+    lat: "",
+    lng: "",
+  });
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
@@ -120,12 +182,74 @@ export default function Home() {
 
   const loadFromHistory = useCallback(
     async (item: QRHistoryItem) => {
-      setUrl(item.url);
+      const { qrType, payload } = item.options;
+
+      setQrType(qrType);
       setQrDataUrl(item.dataUrl);
       setFgColor(item.options.fgColor);
       setBgColor(item.options.bgColor);
       setSize(item.options.size);
 
+      /* ===== Restore form data ===== */
+      switch (qrType) {
+        case "url":
+          setUrl(payload);
+          break;
+
+        case "text":
+          setTextValue(payload);
+          break;
+
+        case "wifi": {
+          const match = payload.match(/WIFI:T:(.*);S:(.*);P:(.*);H:(.*);;/);
+          if (match) {
+            setWifi({
+              encryption: match[1],
+              ssid: match[2],
+              password: match[3],
+              hidden: match[4] === "true",
+            });
+          }
+          break;
+        }
+
+        case "email": {
+          const url = new URL(payload);
+          setEmail({
+            to: url.pathname,
+            subject: url.searchParams.get("subject") || "",
+            body: url.searchParams.get("body") || "",
+          });
+          break;
+        }
+
+        case "sms": {
+          const [, phone, message] = payload.match(/SMSTO:(.*?):(.*)/) || [];
+          setSms({ phone: phone || "", message: message || "" });
+          break;
+        }
+
+        case "whatsapp": {
+          const url = new URL(payload);
+          setWhatsapp({
+            phone: url.pathname.replace("/", ""),
+            message: url.searchParams.get("text") || "",
+          });
+          break;
+        }
+
+        case "event":
+          setEvent((prev) => ({ ...prev })); // iCal parsing optional
+          break;
+
+        case "location": {
+          const [, lat, lng] = payload.match(/geo:(.*),(.*)/) || [];
+          setLocation({ lat: lat || "", lng: lng || "" });
+          break;
+        }
+      }
+
+      /* ===== Restore logo ===== */
       if (
         item.options.logoSize &&
         item.options.logoShape &&
@@ -136,8 +260,7 @@ export default function Home() {
 
         const res = await fetch(item.options.logoDataUrl);
         const blob = await res.blob();
-        const file = new File([blob], "logo.png", { type: blob.type });
-        setLogoFile(file);
+        setLogoFile(new File([blob], "logo.png", { type: blob.type }));
       } else {
         setLogoFile(null);
       }
@@ -146,7 +269,7 @@ export default function Home() {
 
       toast({
         title: "QR Code Loaded",
-        description: "Settings restored from history.",
+        description: "QR code and settings restored.",
       });
     },
     [toast],
@@ -161,12 +284,46 @@ export default function Home() {
     }
   };
 
-  const generateQRCode = useCallback(async () => {
-    if (!url.trim()) {
-      setError("Please enter a URL");
-      return;
-    }
+  const buildQrPayload = (type: QRType, data: any): string => {
+    switch (type) {
+      case "email":
+        return `mailto:${data.to}?subject=${encodeURIComponent(
+          data.subject,
+        )}&body=${encodeURIComponent(data.body)}`;
 
+      case "sms":
+        return `SMSTO:${data.phone}:${data.message}`;
+
+      case "whatsapp":
+        return `https://wa.me/${data.phone}?text=${encodeURIComponent(
+          data.message,
+        )}`;
+
+      case "event":
+        return `
+BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+SUMMARY:${data.title}
+DESCRIPTION:${data.description}
+LOCATION:${data.location}
+DTSTART:${data.start}
+DTEND:${data.end}
+END:VEVENT
+END:VCALENDAR
+      `.trim();
+
+      case "location":
+        return `geo:${data.lat},${data.lng}`;
+
+      // existing cases stay unchanged
+      default:
+        return "";
+    }
+  };
+
+  const generateQRCode = useCallback(async () => {
+    /* ================= LOGO SAFETY ================= */
     if (logoFile) {
       const maxLogo = getMaxLogoSize(size);
 
@@ -192,13 +349,102 @@ export default function Home() {
       }
     }
 
-    let processedUrl = url.trim();
-    if (!processedUrl.startsWith("http")) {
-      processedUrl = "https://" + processedUrl;
-    }
+    /* ================= BUILD PAYLOAD ================= */
+    let payload = "";
 
-    if (!isValidUrl(processedUrl)) {
-      setError("Invalid URL");
+    try {
+      switch (qrType) {
+        case "url": {
+          let processedUrl = url.trim();
+          if (!processedUrl.startsWith("http")) {
+            processedUrl = "https://" + processedUrl;
+          }
+          if (!isValidUrl(processedUrl)) {
+            setError("Invalid URL");
+            return;
+          }
+          payload = processedUrl;
+          break;
+        }
+
+        case "text": {
+          if (!textValue.trim()) {
+            setError("Text cannot be empty");
+            return;
+          }
+          payload = textValue;
+          break;
+        }
+
+        case "wifi": {
+          if (!wifi.ssid) {
+            setError("WiFi SSID is required");
+            return;
+          }
+          payload = buildQrPayload("wifi", wifi);
+          break;
+        }
+
+        case "vcard": {
+          if (!vcard.firstName && !vcard.lastName) {
+            setError("Name is required for vCard");
+            return;
+          }
+          payload = buildQrPayload("vcard", vcard);
+          break;
+        }
+
+        case "email": {
+          if (!email.to) {
+            setError("Recipient email is required");
+            return;
+          }
+          payload = buildQrPayload("email", email);
+          break;
+        }
+
+        case "sms": {
+          if (!sms.phone) {
+            setError("Phone number is required");
+            return;
+          }
+          payload = buildQrPayload("sms", sms);
+          break;
+        }
+
+        case "whatsapp": {
+          if (!whatsapp.phone) {
+            setError("WhatsApp number is required");
+            return;
+          }
+          payload = buildQrPayload("whatsapp", whatsapp);
+          break;
+        }
+
+        case "event": {
+          if (!event.title || !event.start || !event.end) {
+            setError("Event title, start, and end time are required");
+            return;
+          }
+          payload = buildQrPayload("event", event);
+          break;
+        }
+
+        case "location": {
+          if (!location.lat || !location.lng) {
+            setError("Latitude and longitude are required");
+            return;
+          }
+          payload = buildQrPayload("location", location);
+          break;
+        }
+
+        default:
+          setError("Unsupported QR type");
+          return;
+      }
+    } catch {
+      setError("Invalid QR data");
       return;
     }
 
@@ -206,8 +452,9 @@ export default function Home() {
     setIsGenerating(true);
 
     try {
+      /* ================= GENERATE QR ================= */
       const canvas = canvasRef.current!;
-      await QRCode.toCanvas(canvas, processedUrl, {
+      await QRCode.toCanvas(canvas, payload, {
         width: size,
         margin: 2,
         color: {
@@ -217,6 +464,7 @@ export default function Home() {
         errorCorrectionLevel: "H",
       });
 
+      /* ================= LOGO DRAW ================= */
       if (logoFile) {
         const ctx = canvas.getContext("2d")!;
         const logo = new Image();
@@ -230,7 +478,7 @@ export default function Home() {
 
         ctx.save();
 
-        /* ========= BACKGROUND MASK ========= */
+        // Background mask
         ctx.beginPath();
         if (logoShape === "circle") {
           ctx.arc(centerX, centerY, bgSize / 2, 0, Math.PI * 2);
@@ -245,7 +493,6 @@ export default function Home() {
         } else {
           ctx.rect(centerX - bgSize / 2, centerY - bgSize / 2, bgSize, bgSize);
         }
-
         ctx.clip();
 
         ctx.fillStyle = bgColor;
@@ -256,7 +503,7 @@ export default function Home() {
           bgSize,
         );
 
-        /* ========= LOGO MASK ========= */
+        // Logo mask
         ctx.beginPath();
         if (logoShape === "circle") {
           ctx.arc(centerX, centerY, logoSize / 2, 0, Math.PI * 2);
@@ -276,7 +523,6 @@ export default function Home() {
             logoSize,
           );
         }
-
         ctx.clip();
 
         ctx.imageSmoothingEnabled = true;
@@ -293,28 +539,27 @@ export default function Home() {
         ctx.restore();
       }
 
+      /* ================= FINALIZE ================= */
       const finalDataUrl = canvas.toDataURL("image/png");
       setQrDataUrl(finalDataUrl);
 
-      let logoDataUrl: string | undefined;
+      const logoDataUrl = logoFile ? await fileToDataUrl(logoFile) : undefined;
 
-      if (logoFile) {
-        logoDataUrl = await fileToDataUrl(logoFile);
-      }
-
-      saveToHistory(processedUrl, finalDataUrl, {
+      saveToHistory(payload, finalDataUrl, {
         fgColor,
         bgColor,
         size,
         errorCorrection: "H",
+        qrType,
+        payload,
         logoSize: logoFile ? logoSize : undefined,
         logoShape: logoFile ? logoShape : undefined,
-        logoDataUrl: logoFile ? logoDataUrl : undefined,
+        logoDataUrl,
       });
 
       toast({
         title: "QR Code Generated",
-        description: "QR with logo generated successfully.",
+        description: "QR code generated successfully.",
       });
     } catch (err) {
       setError("Failed to generate QR code.");
@@ -322,77 +567,66 @@ export default function Home() {
     } finally {
       setIsGenerating(false);
     }
-  }, [url, fgColor, bgColor, size, logoFile, logoSize, logoShape, toast]);
+  }, [
+    qrType,
+    url,
+    textValue,
+    wifi,
+    vcard,
+    fgColor,
+    bgColor,
+    size,
+    logoFile,
+    logoSize,
+    logoShape,
+    toast,
+  ]);
 
   const downloadAs = useCallback(
-    async (format: "png" | "svg" | "jpeg") => {
-      if (!url.trim()) return;
-
-      let processedUrl = url.trim();
-      if (
-        !processedUrl.startsWith("http://") &&
-        !processedUrl.startsWith("https://")
-      ) {
-        processedUrl = "https://" + processedUrl;
-      }
+    async (format: "png" | "jpeg" | "svg") => {
+      if (!qrDataUrl) return;
 
       try {
-        let dataUrl: string;
-        let filename: string;
+        let href = "";
+        let filename = `qrcode.${format}`;
 
         if (format === "svg") {
-          dataUrl = await QRCode.toString(processedUrl, {
+          const svg = await QRCode.toString(history[0]?.options.payload || "", {
             type: "svg",
             width: size,
             margin: 2,
-            color: {
-              dark: fgColor,
-              light: bgColor,
-            },
+            color: { dark: fgColor, light: bgColor },
             errorCorrectionLevel: "H",
           });
-          const blob = new Blob([dataUrl], { type: "image/svg+xml" });
-          dataUrl = URL.createObjectURL(blob);
-          filename = "qrcode.svg";
+
+          const blob = new Blob([svg], { type: "image/svg+xml" });
+          href = URL.createObjectURL(blob);
         } else {
-          dataUrl = await QRCode.toDataURL(processedUrl, {
-            width: size,
-            margin: 2,
-            color: {
-              dark: fgColor,
-              light: bgColor,
-            },
-            errorCorrectionLevel: "H",
-            type: format === "jpeg" ? "image/jpeg" : "image/png",
-          });
-          filename = format === "jpeg" ? "qrcode.jpg" : "qrcode.png";
+          const canvas = canvasRef.current!;
+          href = canvas.toDataURL(
+            format === "jpeg" ? "image/jpeg" : "image/png",
+          );
         }
 
         const link = document.createElement("a");
-        const canvas = canvasRef.current!;
+        link.href = href;
         link.download = filename;
-        link.href = canvas.toDataURL(
-          format === "jpeg" ? "image/jpeg" : "image/png",
-        );
         link.click();
 
-        if (format === "svg") {
-          URL.revokeObjectURL(dataUrl);
-        }
+        if (format === "svg") URL.revokeObjectURL(href);
 
         toast({
           title: "Download Started",
-          description: `Your QR code is being downloaded as ${format.toUpperCase()}.`,
+          description: `${format.toUpperCase()} downloaded successfully.`,
         });
-      } catch (err) {
+      } catch {
         toast({
           title: "Download Failed",
-          description: "Unable to download QR code. Please try again.",
           variant: "destructive",
         });
       }
     },
-    [url, fgColor, bgColor, size, toast],
+    [qrDataUrl, size, fgColor, bgColor, history, toast],
   );
 
   const copyToClipboard = useCallback(async () => {
@@ -427,10 +661,12 @@ export default function Home() {
       const blob = await response.blob();
       const file = new File([blob], "qrcode.png", { type: "image/png" });
 
+      const shareText = `QR Code (${qrType.toUpperCase()})`;
+
       if (navigator.share && navigator.canShare({ files: [file] })) {
         await navigator.share({
           title: "QR Code",
-          text: `QR Code for: ${url}`,
+          text: shareText,
           files: [file],
         });
         toast({
@@ -441,16 +677,14 @@ export default function Home() {
         await copyToClipboard();
       }
     } catch (err) {
-      if ((err as Error).name !== "AbortError") {
-        toast({
-          title: "Share Failed",
-          description: "Unable to share. Image copied to clipboard instead.",
-          variant: "destructive",
-        });
-        await copyToClipboard();
-      }
+      toast({
+        title: "Share Failed",
+        description: "Unable to share. Image copied to clipboard instead.",
+        variant: "destructive",
+      });
+      await copyToClipboard();
     }
-  }, [qrDataUrl, url, copyToClipboard, toast]);
+  }, [qrDataUrl, qrType, copyToClipboard, toast]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -554,36 +788,271 @@ export default function Home() {
                     <div className="xl:flex">
                       <div className="flex-1">
                         <div className="space-y-4">
-                          <Label
-                            htmlFor="url-input"
-                            className="flex items-center gap-2"
+                          <Label>QR Code Type</Label>
+                          <Tabs
+                            value={qrType}
+                            onValueChange={(v) => setQrType(v as QRType)}
                           >
-                            <Link className="w-4 h-4" />
-                            Enter URL
-                          </Label>
-                          <div className="flex flex-col sm:flex-row gap-3">
-                            <Input
-                              id="url-input"
-                              type="text"
-                              placeholder="Paste your URL here..."
-                              value={url}
-                              onChange={(e) => {
-                                setUrl(e.target.value);
-                                setError(null);
-                              }}
-                              onKeyDown={handleKeyDown}
-                              className="flex-1"
-                              data-testid="input-url"
-                              aria-describedby={error ? "url-error" : undefined}
-                            />
-                            <Button
-                              onClick={generateQRCode}
-                              disabled={isGenerating}
-                              className="min-w-[140px]"
-                              data-testid="button-generate"
-                            >
-                              {isGenerating ? "Generating..." : "Generate QR"}
-                            </Button>
+                            <TabsList className="grid grid-cols-5 lg:grid-cols-9">
+                              <TabsTrigger value="url">Link</TabsTrigger>
+                              <TabsTrigger value="text">Text</TabsTrigger>
+                              <TabsTrigger value="wifi">Wi-Fi</TabsTrigger>
+                              <TabsTrigger value="vcard">Business</TabsTrigger>
+                              <TabsTrigger value="email">Email</TabsTrigger>
+                              <TabsTrigger value="sms">SMS</TabsTrigger>
+                              <TabsTrigger value="whatsapp">
+                                WhatsApp
+                              </TabsTrigger>
+                              <TabsTrigger value="event">Event</TabsTrigger>
+                              <TabsTrigger value="location">
+                                Location
+                              </TabsTrigger>
+                            </TabsList>
+                          </Tabs>
+                        </div>
+
+                        <div className="space-y-4 mt-2">
+                          <div className="flex flex-col gap-3 pt-4">
+                            {qrType === "url" && (
+                              <>
+                                <Label>Enter URL</Label>
+                                <Input
+                                  value={url}
+                                  onChange={(e) => setUrl(e.target.value)}
+                                  placeholder="https://example.com"
+                                />
+                              </>
+                            )}
+
+                            {qrType === "text" && (
+                              <>
+                                <Label>Text</Label>
+                                <Input
+                                  value={textValue}
+                                  onChange={(e) => setTextValue(e.target.value)}
+                                  placeholder="Enter any text"
+                                />
+                              </>
+                            )}
+
+                            {qrType === "wifi" && (
+                              <>
+                                <Label>Wi-Fi Network</Label>
+                                <Input
+                                  placeholder="SSID"
+                                  value={wifi.ssid}
+                                  onChange={(e) =>
+                                    setWifi({ ...wifi, ssid: e.target.value })
+                                  }
+                                />
+                                <Input
+                                  placeholder="Password"
+                                  value={wifi.password}
+                                  onChange={(e) =>
+                                    setWifi({
+                                      ...wifi,
+                                      password: e.target.value,
+                                    })
+                                  }
+                                />
+                              </>
+                            )}
+
+                            {qrType === "vcard" && (
+                              <>
+                                <Label>Business Card</Label>
+                                <Input
+                                  placeholder="First Name"
+                                  value={vcard.firstName}
+                                  onChange={(e) =>
+                                    setVcard({
+                                      ...vcard,
+                                      firstName: e.target.value,
+                                    })
+                                  }
+                                />
+                                <Input
+                                  placeholder="Last Name"
+                                  value={vcard.lastName}
+                                  onChange={(e) =>
+                                    setVcard({
+                                      ...vcard,
+                                      lastName: e.target.value,
+                                    })
+                                  }
+                                />
+                                <Input
+                                  placeholder="Phone"
+                                  value={vcard.phone}
+                                  onChange={(e) =>
+                                    setVcard({
+                                      ...vcard,
+                                      phone: e.target.value,
+                                    })
+                                  }
+                                />
+                                <Input
+                                  placeholder="Email"
+                                  value={vcard.email}
+                                  onChange={(e) =>
+                                    setVcard({
+                                      ...vcard,
+                                      email: e.target.value,
+                                    })
+                                  }
+                                />
+                              </>
+                            )}
+
+                            {qrType === "email" && (
+                              <>
+                                <Input
+                                  placeholder="To"
+                                  value={email.to}
+                                  onChange={(e) =>
+                                    setEmail({ ...email, to: e.target.value })
+                                  }
+                                />
+                                <Input
+                                  placeholder="Subject"
+                                  value={email.subject}
+                                  onChange={(e) =>
+                                    setEmail({
+                                      ...email,
+                                      subject: e.target.value,
+                                    })
+                                  }
+                                />
+                                <Input
+                                  placeholder="Body"
+                                  value={email.body}
+                                  onChange={(e) =>
+                                    setEmail({ ...email, body: e.target.value })
+                                  }
+                                />
+                              </>
+                            )}
+
+                            {qrType === "sms" && (
+                              <>
+                                <Input
+                                  placeholder="Phone number"
+                                  value={sms.phone}
+                                  onChange={(e) =>
+                                    setSms({ ...sms, phone: e.target.value })
+                                  }
+                                />
+                                <Input
+                                  placeholder="Message"
+                                  value={sms.message}
+                                  onChange={(e) =>
+                                    setSms({ ...sms, message: e.target.value })
+                                  }
+                                />
+                              </>
+                            )}
+
+                            {qrType === "whatsapp" && (
+                              <>
+                                <Input
+                                  placeholder="Phone (with country code)"
+                                  value={whatsapp.phone}
+                                  onChange={(e) =>
+                                    setWhatsapp({
+                                      ...whatsapp,
+                                      phone: e.target.value,
+                                    })
+                                  }
+                                />
+                                <Input
+                                  placeholder="Message"
+                                  value={whatsapp.message}
+                                  onChange={(e) =>
+                                    setWhatsapp({
+                                      ...whatsapp,
+                                      message: e.target.value,
+                                    })
+                                  }
+                                />
+                              </>
+                            )}
+
+                            {qrType === "event" && (
+                              <>
+                                <Input
+                                  placeholder="Event title"
+                                  value={event.title}
+                                  onChange={(e) =>
+                                    setEvent({
+                                      ...event,
+                                      title: e.target.value,
+                                    })
+                                  }
+                                />
+                                <Input
+                                  placeholder="Description"
+                                  value={event.description}
+                                  onChange={(e) =>
+                                    setEvent({
+                                      ...event,
+                                      description: e.target.value,
+                                    })
+                                  }
+                                />
+                                <Input
+                                  placeholder="Location"
+                                  value={event.location}
+                                  onChange={(e) =>
+                                    setEvent({
+                                      ...event,
+                                      location: e.target.value,
+                                    })
+                                  }
+                                />
+                                <Input
+                                  type="datetime-local"
+                                  value={event.start}
+                                  onChange={(e) =>
+                                    setEvent({
+                                      ...event,
+                                      start: e.target.value,
+                                    })
+                                  }
+                                />
+                                <Input
+                                  type="datetime-local"
+                                  value={event.end}
+                                  onChange={(e) =>
+                                    setEvent({ ...event, end: e.target.value })
+                                  }
+                                />
+                              </>
+                            )}
+
+                            {qrType === "location" && (
+                              <>
+                                <Input
+                                  placeholder="Latitude"
+                                  value={location.lat}
+                                  onChange={(e) =>
+                                    setLocation({
+                                      ...location,
+                                      lat: e.target.value,
+                                    })
+                                  }
+                                />
+                                <Input
+                                  placeholder="Longitude"
+                                  value={location.lng}
+                                  onChange={(e) =>
+                                    setLocation({
+                                      ...location,
+                                      lng: e.target.value,
+                                    })
+                                  }
+                                />
+                              </>
+                            )}
                           </div>
                           {error && (
                             <p
@@ -704,6 +1173,16 @@ export default function Home() {
                               Max logo size: {getMaxLogoSize(size)}px (30% of
                               QR)
                             </p>
+                          </div>
+                          <div className="flex justify-end mt-6">
+                            <Button
+                              onClick={generateQRCode}
+                              disabled={isGenerating}
+                              className="min-w-[140px]"
+                              data-testid="button-generate"
+                            >
+                              {isGenerating ? "Generating..." : "Generate QR"}
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -829,6 +1308,10 @@ export default function Home() {
                                 className="w-full aspect-square rounded-sm mb-2"
                               />
                               <p className="text-xs truncate">{item.url}</p>
+                              <p className="text-xs truncate">
+                                ({item.options.qrType?.toUpperCase() || "LINK"})
+                              </p>
+
                               <p className="text-xs text-muted-foreground">
                                 {new Date(item.timestamp).toLocaleDateString()}
                               </p>
