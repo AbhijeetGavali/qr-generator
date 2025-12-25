@@ -6,12 +6,14 @@ const PrivacyPolicy: React.FC = () => {
     <>
       <header className="border-b border-border">
         <div className="max-w-6xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <QrCode className="w-8 h-8 text-primary" />
-            <span className="text-xl font-bold" data-testid="text-brand">
-              QRGen
-            </span>
-          </div>
+          <a href="/" data-testid="home-link">
+            <div className="flex items-center gap-2">
+              <QrCode className="w-8 h-8 text-primary" />
+              <span className="text-xl font-bold" data-testid="text-brand">
+                QRGen
+              </span>
+            </div>
+          </a>
         </div>
       </header>
       <div className="container mx-auto p-6 max-w-4xl">
@@ -88,10 +90,12 @@ const PrivacyPolicy: React.FC = () => {
       <footer className="border-t border-border py-8 md:py-12">
         <div className="max-w-6xl mx-auto px-4 md:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <QrCode className="w-6 h-6 text-primary" />
-              <span className="font-semibold">QRGen</span>
-            </div>
+            <a href="/" data-testid="home-link">
+              <div className="flex items-center gap-2">
+                <QrCode className="w-6 h-6 text-primary" />
+                <span className="font-semibold">QRGen</span>
+              </div>
+            </a>
             <div className="flex flex-wrap gap-6 text-sm text-muted-foreground justify-center">
               <a
                 href="/privacy-policy"
