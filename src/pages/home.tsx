@@ -24,6 +24,8 @@ import {
   Trash2,
 } from "lucide-react";
 import UseCasesSection from "@/components/UseCasesSection";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 type QRType =
   | "url"
@@ -732,30 +734,8 @@ END:VCALENDAR
         <AdSlot size="rectangle" className="self-center" adSlot="" />
       </div>
       <div className="bg-background mx-auto">
-        <header className="border-b border-border">
-          <div className="max-w-6xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between gap-4">
-            <a href="/" data-testid="home-link">
-              <div className="flex items-center gap-2">
-                <QrCode className="w-8 h-8 text-primary" />
-                <span className="text-xl font-bold" data-testid="text-brand">
-                  QRGen
-                </span>
-              </div>
-            </a>
-          </div>
-        </header>
+        <Header />
         <section className="relative py-16 md:py-24 overflow-hidden">
-          <div className="absolute inset-0 opacity-5">
-            <div className="grid grid-cols-8 gap-4 p-4 h-full">
-              {Array.from({ length: 64 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-foreground rounded-sm aspect-square"
-                />
-              ))}
-            </div>
-          </div>
-
           <div className="relative max-w-6xl mx-auto px-4 md:px-8">
             <div className="text-center mb-12">
               <h1
@@ -785,7 +765,7 @@ END:VCALENDAR
                   </TabsList>
 
                   <TabsContent value="generate" className="space-y-6">
-                    <div className="xl:flex">
+                    <div className="xl:flex gap-8">
                       <div className="flex-1">
                         <div className="space-y-4">
                           <Label>QR Code Type</Label>
@@ -793,13 +773,17 @@ END:VCALENDAR
                             value={qrType}
                             onValueChange={(v) => setQrType(v as QRType)}
                           >
-                            <TabsList className="grid grid-cols-5 lg:grid-cols-9">
+                            <TabsList className="grid grid-cols-3 mt-3">
                               <TabsTrigger value="url">Link</TabsTrigger>
                               <TabsTrigger value="text">Text</TabsTrigger>
                               <TabsTrigger value="wifi">Wi-Fi</TabsTrigger>
+                            </TabsList>
+                            <TabsList className="grid grid-cols-3 mt-3">
                               <TabsTrigger value="vcard">Business</TabsTrigger>
                               <TabsTrigger value="email">Email</TabsTrigger>
                               <TabsTrigger value="sms">SMS</TabsTrigger>
+                            </TabsList>
+                            <TabsList className="grid grid-cols-3 mt-3">
                               <TabsTrigger value="whatsapp">
                                 WhatsApp
                               </TabsTrigger>
@@ -1174,7 +1158,7 @@ END:VCALENDAR
                               QR)
                             </p>
                           </div>
-                          <div className="flex justify-end mt-6">
+                          <div className="flex justify-center xl:justify-end my-6 xl:mt-6">
                             <Button
                               onClick={generateQRCode}
                               disabled={isGenerating}
@@ -1187,92 +1171,94 @@ END:VCALENDAR
                         </div>
                       </div>
 
-                      <Card className="p-6 md:p-8">
-                        <div className="flex flex-col items-center">
-                          {qrDataUrl ? (
-                            <>
-                              <div className="rounded-lg shadow-sm mb-6">
-                                <img
-                                  src={qrDataUrl}
-                                  alt="Generated QR Code"
-                                  className="w-[200px] h-[200px] md:w-[250px] md:h-[250px]"
-                                  data-testid="img-qrcode"
-                                />
+                      <div className="sticky self-start">
+                        <Card className="p-6 md:p-8">
+                          <div className="flex flex-col items-center">
+                            {qrDataUrl ? (
+                              <>
+                                <div className="rounded-lg shadow-sm mb-6">
+                                  <img
+                                    src={qrDataUrl}
+                                    alt="Generated QR Code"
+                                    className="w-[200px] h-[200px] md:w-[250px] md:h-[250px]"
+                                    data-testid="img-qrcode"
+                                  />
+                                </div>
+                                <div className="flex flex-wrap gap-2 justify-center mb-4">
+                                  <Button
+                                    onClick={() => downloadAs("png")}
+                                    size="sm"
+                                    data-testid="button-download-png"
+                                  >
+                                    <Download className="w-4 h-4 mr-2" />
+                                    PNG
+                                  </Button>
+                                  <Button
+                                    onClick={() => downloadAs("svg")}
+                                    size="sm"
+                                    variant="outline"
+                                    data-testid="button-download-svg"
+                                    disabled={!!logoFile}
+                                  >
+                                    <Download className="w-4 h-4 mr-2" />
+                                    SVG
+                                  </Button>
+                                  <Button
+                                    onClick={() => downloadAs("jpeg")}
+                                    size="sm"
+                                    variant="outline"
+                                    data-testid="button-download-jpeg"
+                                  >
+                                    <Download className="w-4 h-4 mr-2" />
+                                    JPEG
+                                  </Button>
+                                </div>
+                                <div className="flex flex-wrap gap-2 justify-center">
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={copyToClipboard}
+                                    data-testid="button-copy"
+                                  >
+                                    {copied ? (
+                                      <>
+                                        <Check className="w-4 h-4 mr-2" />
+                                        Copied!
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Copy className="w-4 h-4 mr-2" />
+                                        Copy
+                                      </>
+                                    )}
+                                  </Button>
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={shareQRCode}
+                                    data-testid="button-share"
+                                  >
+                                    <Share2 className="w-4 h-4 mr-2" />
+                                    Share
+                                  </Button>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="flex flex-col items-center py-8 text-center">
+                                <div className="w-[200px] h-[200px] md:w-[250px] md:h-[250px] border-2 border-dashed border-border rounded-lg flex items-center justify-center mb-4">
+                                  <QrCode className="w-16 h-16 text-muted-foreground/50" />
+                                </div>
+                                <p
+                                  className="text-muted-foreground"
+                                  data-testid="text-empty-state"
+                                >
+                                  Your QR code will appear here
+                                </p>
                               </div>
-                              <div className="flex flex-wrap gap-2 justify-center mb-4">
-                                <Button
-                                  onClick={() => downloadAs("png")}
-                                  size="sm"
-                                  data-testid="button-download-png"
-                                >
-                                  <Download className="w-4 h-4 mr-2" />
-                                  PNG
-                                </Button>
-                                <Button
-                                  onClick={() => downloadAs("svg")}
-                                  size="sm"
-                                  variant="outline"
-                                  data-testid="button-download-svg"
-                                  disabled={!!logoFile}
-                                >
-                                  <Download className="w-4 h-4 mr-2" />
-                                  SVG
-                                </Button>
-                                <Button
-                                  onClick={() => downloadAs("jpeg")}
-                                  size="sm"
-                                  variant="outline"
-                                  data-testid="button-download-jpeg"
-                                >
-                                  <Download className="w-4 h-4 mr-2" />
-                                  JPEG
-                                </Button>
-                              </div>
-                              <div className="flex flex-wrap gap-2 justify-center">
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={copyToClipboard}
-                                  data-testid="button-copy"
-                                >
-                                  {copied ? (
-                                    <>
-                                      <Check className="w-4 h-4 mr-2" />
-                                      Copied!
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Copy className="w-4 h-4 mr-2" />
-                                      Copy
-                                    </>
-                                  )}
-                                </Button>
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={shareQRCode}
-                                  data-testid="button-share"
-                                >
-                                  <Share2 className="w-4 h-4 mr-2" />
-                                  Share
-                                </Button>
-                              </div>
-                            </>
-                          ) : (
-                            <div className="flex flex-col items-center py-8 text-center">
-                              <div className="w-[200px] h-[200px] md:w-[250px] md:h-[250px] border-2 border-dashed border-border rounded-lg flex items-center justify-center mb-4">
-                                <QrCode className="w-16 h-16 text-muted-foreground/50" />
-                              </div>
-                              <p
-                                className="text-muted-foreground"
-                                data-testid="text-empty-state"
-                              >
-                                Your QR code will appear here
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </Card>
+                            )}
+                          </div>
+                        </Card>
+                      </div>
                     </div>
                   </TabsContent>
 
@@ -1413,47 +1399,7 @@ END:VCALENDAR
         </section>
         <AdSlot size="leaderboard" className="py-6 px-4" adSlot="6997057063" />
         <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-        <footer className="border-t border-border py-8 md:py-12">
-          <div className="max-w-6xl mx-auto px-4 md:px-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <a href="/" data-testid="home-link">
-                <div className="flex items-center gap-2">
-                  <QrCode className="w-6 h-6 text-primary" />
-                  <span className="font-semibold">QRGen</span>
-                </div>
-              </a>
-              <div className="flex flex-wrap gap-6 text-sm text-muted-foreground justify-center">
-                <a
-                  href="/privacy-policy"
-                  className="hover:text-foreground transition-colors"
-                  data-testid="link-privacy"
-                >
-                  Privacy Policy
-                </a>
-                <a
-                  href="/terms-of-service"
-                  className="hover:text-foreground transition-colors"
-                  data-testid="link-terms"
-                >
-                  Terms of Service
-                </a>
-                <a
-                  href="/contact"
-                  className="hover:text-foreground transition-colors"
-                  data-testid="link-contact"
-                >
-                  Contact
-                </a>
-              </div>
-              <p
-                className="text-sm text-muted-foreground"
-                data-testid="text-copyright"
-              >
-                {new Date().getFullYear()} QRGen. All rights reserved.
-              </p>
-            </div>
-          </div>
-        </footer>
+        <Footer />
         <canvas ref={canvasRef} className="hidden" />
       </div>
       <div className="md:grid grid-rows-5 gap-6 h-screen hidden overflow-hidden sticky top-0 mx-1 py-3">

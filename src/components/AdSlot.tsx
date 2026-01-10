@@ -80,22 +80,27 @@ export function AdSlot({
 
   return (
     <div className={cn("flex flex-col items-center p-3 h-full", className)}>
-      <span className="text-xs text-muted-foreground mb-1">{label}</span>
-      <p className="text-center text-xs text-gray-600">
-        Advertise here → contact <strong>sicrewlimited@gmail.com</strong>
-      </p>
-      <ins
-        className={cn(
-          "adsbygoogle bg-muted/50 border border-border rounded-md",
-          sizeStyles[size],
-        )}
-        style={{ display: "block" }}
-        data-ad-client={adClient}
-        data-ad-slot={adSlot}
-        data-ad-format="auto"
-        data-full-width-responsive="true"
-        ref={adRef}
-      ></ins>
+      {size == "leaderboard" ? (
+        <>
+          <span className="text-xs text-muted-foreground mb-1">{label}</span>
+          <p className="text-center text-xs text-gray-600">
+            Advertise here → contact <strong>sicrewlimited@gmail.com</strong>
+          </p>
+        </>
+      ) : (
+        <ins
+          className={cn(
+            "adsbygoogle bg-muted/50 border border-border rounded-md",
+            sizeStyles[size],
+          )}
+          style={{ display: "block" }}
+          data-ad-client={adClient}
+          data-ad-slot={adSlot}
+          data-ad-format="auto"
+          data-full-width-responsive="true"
+          ref={adRef}
+        ></ins>
+      )}
     </div>
   );
 }
