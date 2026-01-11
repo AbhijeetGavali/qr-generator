@@ -5,9 +5,12 @@ import VerifyEmailBanner from "./VerifyEmailBanner";
 import NotificationIcon from "./Notification";
 import ProfileMenu from "./ProfileMenu";
 import { useAuth } from "@/hooks/useAuth";
+import { Link } from "wouter";
+import { useHashScroll } from "@/hooks/useHashScroll";
 
 export default function Header() {
   const { user } = useAuth();
+  const scrollToHash = useHashScroll();
   return (
     <>
       <VerifyEmailBanner />
@@ -29,14 +32,21 @@ export default function Header() {
               </>
             ) : (
               <>
-                <a href="/pricing" data-testid="home-link">
+                <Link
+                  href="/#use-cases"
+                  data-testid="home-link"
+                  onClick={scrollToHash}
+                >
+                  <div className="flex items-center gap-2">Use Cases</div>
+                </Link>
+                <Link href="/pricing" data-testid="home-link">
                   <div className="flex items-center gap-2">Pricing</div>
-                </a>
-                <a href="/login" data-testid="login-link">
+                </Link>
+                <Link href="/login" data-testid="login-link">
                   <Button className="min-w-[140px]" data-testid="button-login">
                     Login
                   </Button>
-                </a>
+                </Link>
               </>
             )}
           </div>

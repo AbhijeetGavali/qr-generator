@@ -1,3 +1,6 @@
+import { useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+
 const useCases = [
   {
     title: "Business Cards",
@@ -282,8 +285,29 @@ const useCases = [
 ];
 
 export default function UseCasesSection() {
+  const redirectUsecase = (item: (typeof useCases)[0]) => {
+    const query = encodeURIComponent(item.title);
+    console.log(`Redirecting to /create?usecase=${query}`);
+  };
+
+  // Card animation variants
+  const cardVariants = {
+    hidden: { opacity: 0, y: 40, scale: 0.95 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: { duration: 0.5, ease: "easeOut" },
+    },
+    hover: {
+      scale: 1.05,
+      y: -4,
+      transition: { duration: 0.3, ease: "easeOut" },
+    },
+  };
+
   return (
-    <section className="bg-gray-50 py-16">
+    <section className="bg-gray-50 py-16" id="use-cases">
       <div className="mx-auto max-w-7xl px-6">
         <header className="mb-12 text-center">
           <h2 className="text-3xl font-bold text-gray-900">Use Cases</h2>
@@ -294,10 +318,15 @@ export default function UseCasesSection() {
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {useCases.map((item, index) => (
-            <div
+            <motion.div
               key={index}
-              className="group rounded-2xl border border-gray-100 bg-white p-6 shadow-sm
-                         transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+              className="group rounded-2xl border border-gray-100 bg-white p-6 shadow-sm cursor-pointer"
+              onClick={() => redirectUsecase(item)}
+              variants={cardVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.3 }} // Animate once when 30% of the card is in view
+              whileHover="hover"
             >
               <div
                 style={
@@ -308,7 +337,7 @@ export default function UseCasesSection() {
                 }
                 className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl
                            bg-[var(--icon-bg)] text-[var(--icon-fg)]
-                           transition
+                           transition-colors
                            group-hover:bg-[var(--icon-fg)] group-hover:text-white"
               >
                 {item.icon}
@@ -318,7 +347,7 @@ export default function UseCasesSection() {
                 {item.title}
               </h3>
               <p className="mt-2 text-sm text-gray-600">{item.description}</p>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

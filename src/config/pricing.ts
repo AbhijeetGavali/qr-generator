@@ -44,6 +44,7 @@ export const PRICING_PLANS = [
       "Controlled-Expiry QRs",
       "Bulk QR Generation",
       "Unlimited Storage",
+      "Host with Your Domain",
       "Priority Support",
     ],
   },

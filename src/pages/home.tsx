@@ -12,7 +12,6 @@ import {
   Zap,
   Diamond,
   Gift,
-  Link,
   Download,
   Copy,
   Check,
@@ -26,6 +25,7 @@ import {
 import UseCasesSection from "@/components/UseCasesSection";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { motion } from "framer-motion";
 
 type QRType =
   | "url"
@@ -64,6 +64,19 @@ const getMaxLogoSize = (qrSize: number) => Math.floor(qrSize * MAX_LOGO_RATIO);
 
 const isQrSizeSafeForLogo = (qrSize: number, logoSize: number) =>
   qrSize >= logoSize + MIN_QR_LOGO_PADDING;
+
+// Animation variants
+const itemVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+};
+
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.15 }, // stagger grid items
+  },
+};
 
 export default function Home() {
   const [url, setUrl] = useState("");
@@ -737,7 +750,16 @@ END:VCALENDAR
         <Header />
         <section className="relative py-16 md:py-24 overflow-hidden">
           <div className="relative max-w-6xl mx-auto px-4 md:px-8">
-            <div className="text-center mb-12">
+            <motion.div
+              className="text-center mb-12"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{
+                opacity: 1,
+                y: 0,
+                transition: { duration: 0.7, ease: "easeOut" },
+              }}
+              viewport={{ once: true }}
+            >
               <h1
                 className="text-4xl md:text-5xl font-bold mb-4"
                 data-testid="text-headline"
@@ -748,7 +770,7 @@ END:VCALENDAR
                 Transform any URL into a scannable QR code in seconds. Customize
                 colors, size, and download in multiple formats.
               </p>
-            </div>
+            </motion.div>
 
             <div className="flex flex-col gap-6 order-first md:order-none">
               <Card className="p-6 md:p-8">
@@ -1330,17 +1352,28 @@ END:VCALENDAR
         <AdSlot size="leaderboard" className="py-6 px-4" adSlot="6997057063" />
         <section className="py-16 md:py-20">
           <div className="max-w-6xl mx-auto px-4 md:px-8">
-            <h2
+            <motion.h2
               className="text-2xl md:text-3xl font-semibold text-center mb-12"
               data-testid="text-how-it-works"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0, transition: { duration: 0.6 } }}
+              viewport={{ once: true }}
             >
               How It Works
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-              {steps.map((step, index) => (
-                <div
+            </motion.h2>
+
+            <motion.div
+              className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6"
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.3 }}
+            >
+              {steps.map((step: any, index: number) => (
+                <motion.div
                   key={index}
                   className="relative flex flex-col items-center text-center"
+                  variants={itemVariants}
                 >
                   <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg mb-4">
                     {step.number}
@@ -1360,23 +1393,38 @@ END:VCALENDAR
                   {index < steps.length - 1 && (
                     <ArrowRight className="hidden md:block absolute -right-5 top-5 text-muted-foreground/40 w-5 h-5" />
                   )}
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </section>
         <AdSlot size="leaderboard" className="py-6 px-4" adSlot="6997057063" />
         <section className="py-16 md:py-20 bg-card">
           <div className="max-w-6xl mx-auto px-4 md:px-8">
-            <h2
+            <motion.h2
               className="text-2xl md:text-3xl font-semibold text-center mb-12"
               data-testid="text-features-heading"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0, transition: { duration: 0.6 } }}
+              viewport={{ once: true }}
             >
               Why Choose Our QR Generator?
-            </h2>
-            <div className="grid md:grid-cols-3 gap-6 md:gap-8">
-              {features.map((feature, index) => (
-                <Card key={index} className="p-6 text-center hover-elevate">
+            </motion.h2>
+
+            <motion.div
+              className="grid md:grid-cols-3 gap-6 md:gap-8"
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.3 }}
+            >
+              {features.map((feature: any, index: number) => (
+                <motion.div
+                  key={index}
+                  className="p-6 text-center hover-elevate bg-white rounded-xl shadow-sm cursor-pointer"
+                  variants={itemVariants}
+                  whileHover={{ scale: 1.05, transition: { duration: 0.3 } }}
+                >
                   <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                     <feature.icon className="w-6 h-6 text-primary" />
                   </div>
@@ -1392,9 +1440,9 @@ END:VCALENDAR
                   >
                     {feature.description}
                   </p>
-                </Card>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </section>
         <AdSlot size="leaderboard" className="py-6 px-4" adSlot="6997057063" />

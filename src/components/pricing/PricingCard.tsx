@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import FeatureItem from "./FeatureItem";
+import { motion } from "framer-motion";
 
 interface PricingCardProps {
   title: string;
@@ -18,14 +19,35 @@ export default function PricingCard({
   ctaLabel,
   ctaLink,
 }: PricingCardProps) {
+  const cardVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5, ease: "easeOut" },
+    },
+    hover: {
+      scale: 1.05,
+      boxShadow: "0px 10px 25px rgba(0,0,0,0.15)",
+      transition: { duration: 0.3 },
+    },
+  };
+
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 flex flex-col">
+    <motion.div
+      className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 flex flex-col cursor-pointer"
+      variants={cardVariants}
+      initial="hidden"
+      whileInView="visible"
+      whileHover="hover"
+      viewport={{ once: true, amount: 0.3 }}
+    >
       <h2 className="text-2xl text-center font-bold mb-4">{title}</h2>
 
       <p className="text-4xl text-center font-extrabold mb-6">
         {price}
         {duration && (
-          <span className="text-base font-medium text-gray-500">
+          <span className="text-base font-medium text-gray-500 ml-2">
             {duration}
           </span>
         )}
@@ -40,6 +62,6 @@ export default function PricingCard({
       <a href={ctaLink}>
         <Button className="min-w-full">{ctaLabel}</Button>
       </a>
-    </div>
+    </motion.div>
   );
 }
