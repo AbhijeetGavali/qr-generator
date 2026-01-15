@@ -152,8 +152,8 @@ export const FEATURE_CARDS: (FeatureCard & {
     cta: "Upgrade to Pro",
   },
   {
-    slug: "unlimited-destination-editing",
-    title: "Unlimited Destination Editing",
+    slug: "unlimited-destination-edits",
+    title: "Unlimited Destination Edits",
     icon: RefreshCcw,
     plans: ["pro"],
     description: "Edit the destination of dynamic QR codes anytime.",
