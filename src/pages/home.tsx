@@ -1193,7 +1193,7 @@ END:VCALENDAR
                         </div>
                       </div>
 
-                      <div className="sticky self-start">
+                      <div className="sticky top-4 self-start">
                         <Card className="p-6 md:p-8">
                           <div className="flex flex-col items-center">
                             {qrDataUrl ? (

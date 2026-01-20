@@ -16,6 +16,7 @@ import { ProtectedDashboardWrapper } from "./pages/ProtectedRoute";
 import Home from "./pages/home";
 import Dashboard from "./pages/Dashboard";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import Redirect from "./pages/Redirect";
 
 function Router() {
   return (
@@ -37,6 +38,7 @@ function Router() {
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/contact" component={Contact} />
       <Route path="/contact-sales" component={ContactSalesPage} />
+      <Route path="/r/:id" component={Redirect} />
       <Route component={NotFound} />
     </Switch>
   );
