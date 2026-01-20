@@ -52,30 +52,28 @@ export default function Redirect() {
         else if (userAgent.includes("Safari")) browser = "Safari";
         else if (userAgent.includes("Firefox")) browser = "Firefox";
 
+        const referrer = document.referrer
+          ? new URL(document.referrer).hostname
+          : "direct";
+
         const analyticsUpdate: any = {
           scanCount: increment(1),
           lastScanned: serverTimestamp(),
           [`analytics.dailyScans.${today}`]: increment(1),
           [`analytics.devices.${deviceType}`]: increment(1),
           [`analytics.browsers.${browser}`]: increment(1),
+          [`analytics.referrers.${referrer.replace(/\./g, "_")}`]: increment(1),
         };
 
-        // Capture Referrer (e.g., did they scan from a specific app?)
-        const referrer = document.referrer
-          ? new URL(document.referrer).hostname
-          : "direct";
-        analyticsUpdate[`analytics.referrers.${referrer.replace(/\./g, "_")}`] =
-          increment(1);
-
         // Update Firestore (Fire and forget)
-        updateDoc(qrRef, analyticsUpdate).catch((err) =>
+        await updateDoc(qrRef, analyticsUpdate).catch((err) =>
           console.error("Analytics failed", err),
         );
 
         setStatus("redirecting");
 
         // Final Redirect
-        window.location.replace(destination);
+        // window.location.replace(destination);
       } catch (error) {
         console.error("Redirect error:", error);
         setStatus("not-found");
