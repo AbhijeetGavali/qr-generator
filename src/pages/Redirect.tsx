@@ -73,7 +73,7 @@ export default function Redirect() {
         setStatus("redirecting");
 
         // Final Redirect
-        // window.location.replace(destination);
+        window.location.replace(destination);
       } catch (error) {
         console.error("Redirect error:", error);
         setStatus("not-found");
