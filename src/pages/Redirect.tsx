@@ -52,9 +52,7 @@ export default function Redirect() {
         else if (userAgent.includes("Safari")) browser = "Safari";
         else if (userAgent.includes("Firefox")) browser = "Firefox";
 
-        const referrer = document.referrer
-          ? new URL(document.referrer).hostname
-          : "direct";
+        const referrer = window.location.hostname || "direct";
 
         const analyticsUpdate: any = {
           scanCount: increment(1),
