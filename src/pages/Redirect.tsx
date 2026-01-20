@@ -33,7 +33,7 @@ export default function Redirect() {
         const data = snap.data();
         const destination = data.payload;
 
-        if (!destination) {
+        if (!destination || !data.isActive) {
           setStatus("not-found");
           return;
         }

@@ -50,12 +50,14 @@ const isQrSizeSafeForLogo = (qrSize: number, logoSize: number) =>
   qrSize >= logoSize + MIN_QR_LOGO_PADDING;
 
 export default function QRAdvanceEditor({
+  qrData,
   edit = false,
   drawerOpen,
   setDrawerOpen,
   userId,
 }: any) {
   const [url, setUrl] = useState("");
+  const [rUrl, setRUrl] = useState("");
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -696,6 +698,107 @@ export default function QRAdvanceEditor({
     }
   }, [drawerOpen]);
 
+  useEffect(() => {
+    if (edit && qrData) {
+      setPrimaryQrType(qrData.primaryType || "static");
+      setQrType(qrData.qrType || "url");
+
+      const payload = qrData.payload || "";
+
+      switch (qrData.qrType) {
+        case "url":
+          setRUrl(qrData.redirectUrl || "");
+          setUrl(payload);
+          break;
+        case "text":
+          setTextValue(payload);
+          break;
+
+        case "wifi": {
+          // Parse "WIFI:S:MySSID;T:WPA;P:secret;H:false;;"
+          const ssid = payload.match(/S:(.*?);/)?.[1] || "";
+          const encryption = payload.match(/T:(.*?);/)?.[1] || "WPA";
+          const password = payload.match(/P:(.*?);/)?.[1] || "";
+          const hidden = payload.match(/H:(.*?);/)?.[1] === "true";
+          setWifi({ ssid, encryption, password, hidden });
+          break;
+        }
+
+        case "vcard": {
+          // Parse vCard string
+          const firstName = payload.match(/N:.*?;(.*?)\n/)?.[1] || "";
+          const lastName = payload.match(/N:(.*?);/)?.[1] || "";
+          const phone = payload.match(/TEL:(.*?)\n/)?.[1] || "";
+          const email = payload.match(/EMAIL:(.*?)\n/)?.[1] || "";
+          setVcard((prev) => ({ ...prev, firstName, lastName, phone, email }));
+          break;
+        }
+
+        case "email": {
+          // Parse mailto:to?subject=...&body=...
+          const to = payload.match(/mailto:(.*?)\?/)?.[1] || "";
+          const searchParams = new URLSearchParams(payload.split("?")[1]);
+          setEmail({
+            to,
+            subject: decodeURIComponent(searchParams.get("subject") || ""),
+            body: decodeURIComponent(searchParams.get("body") || ""),
+          });
+          break;
+        }
+
+        case "sms": {
+          // Parse SMSTO:phone:message
+          const parts = payload.split(":");
+          setSms({ phone: parts[1] || "", message: parts[2] || "" });
+          break;
+        }
+
+        case "whatsapp": {
+          // Parse https://wa.me/phone?text=message
+          const phone = payload.match(/wa\.me\/(.*?)\?/)?.[1] || "";
+          const text = payload.split("text=")[1] || "";
+          setWhatsapp({ phone, message: decodeURIComponent(text) });
+          break;
+        }
+
+        case "location": {
+          // Parse geo:lat,lng
+          const coords = payload.replace("geo:", "").split(",");
+          setLocation({ lat: coords[0] || "", lng: coords[1] || "" });
+          break;
+        }
+
+        case "event": {
+          // Simple extraction for events
+          const title = payload.match(/SUMMARY:(.*?)\n/)?.[1] || "";
+          const desc = payload.match(/DESCRIPTION:(.*?)\n/)?.[1] || "";
+          const loc = payload.match(/LOCATION:(.*?)\n/)?.[1] || "";
+          setEvent((prev) => ({
+            ...prev,
+            title,
+            description: desc,
+            location: loc,
+          }));
+          break;
+        }
+      }
+
+      // Config Mapping
+      if (qrData.config) {
+        const c = qrData.config;
+        setDots(c.dots);
+        setBackgroundColor(c.backgroundColor);
+        setCornerSquareColor(c.cornerSquareColor);
+        setCornerDotsColor(c.cornerDotsColor);
+        setSize(c.size ?? 300);
+        setShape(c.shape ?? "square");
+        setPadding(c.padding ?? 20);
+        setLogoSize(c.logoSize ?? 60);
+        setLogoShape(c.logoShape ?? "rounded");
+      }
+    }
+  }, [edit, qrData]);
+
   return (
     <Drawer
       open={drawerOpen}
@@ -723,7 +826,7 @@ export default function QRAdvanceEditor({
               }}
             >
               <TabsList className="grid grid-cols-2 mt-3">
-                <TabsTrigger value="static">
+                <TabsTrigger value="static" disabled={edit}>
                   <div className="flex items-center gap-2">
                     Static
                     <Tooltip title="Once created, this QR cannot be changed. If you need updates later, create a new QR.">
@@ -731,7 +834,7 @@ export default function QRAdvanceEditor({
                     </Tooltip>
                   </div>
                 </TabsTrigger>
-                <TabsTrigger value="dynamic">
+                <TabsTrigger value="dynamic" disabled={edit}>
                   <div className="flex items-center gap-2">
                     Dynamic
                     <Tooltip title="You can update where this QR leads anytime, without changing the QR image.">
@@ -752,16 +855,18 @@ export default function QRAdvanceEditor({
                   onValueChange={(v) => setQrType(v as QRType)}
                 >
                   <TabsList className="grid grid-cols-3 mt-3">
-                    <TabsTrigger value="url">Link</TabsTrigger>
+                    <TabsTrigger value="url" disabled={edit}>
+                      Link
+                    </TabsTrigger>
                     <TabsTrigger
                       value="text"
-                      disabled={primaryQrType === "dynamic"}
+                      disabled={primaryQrType === "dynamic" || edit}
                     >
                       Text
                     </TabsTrigger>
                     <TabsTrigger
                       value="wifi"
-                      disabled={primaryQrType === "dynamic"}
+                      disabled={primaryQrType === "dynamic" || edit}
                     >
                       Wi-Fi
                     </TabsTrigger>
@@ -769,19 +874,19 @@ export default function QRAdvanceEditor({
                   <TabsList className="grid grid-cols-3 mt-3">
                     <TabsTrigger
                       value="vcard"
-                      disabled={primaryQrType === "dynamic"}
+                      disabled={primaryQrType === "dynamic" || edit}
                     >
                       Business
                     </TabsTrigger>
                     <TabsTrigger
                       value="email"
-                      disabled={primaryQrType === "dynamic"}
+                      disabled={primaryQrType === "dynamic" || edit}
                     >
                       Email
                     </TabsTrigger>
                     <TabsTrigger
                       value="sms"
-                      disabled={primaryQrType === "dynamic"}
+                      disabled={primaryQrType === "dynamic" || edit}
                     >
                       SMS
                     </TabsTrigger>
@@ -789,19 +894,19 @@ export default function QRAdvanceEditor({
                   <TabsList className="grid grid-cols-3 mt-3">
                     <TabsTrigger
                       value="whatsapp"
-                      disabled={primaryQrType === "dynamic"}
+                      disabled={primaryQrType === "dynamic" || edit}
                     >
                       WhatsApp
                     </TabsTrigger>
                     <TabsTrigger
                       value="event"
-                      disabled={primaryQrType === "dynamic"}
+                      disabled={primaryQrType === "dynamic" || edit}
                     >
                       Event
                     </TabsTrigger>
                     <TabsTrigger
                       value="location"
-                      disabled={primaryQrType === "dynamic"}
+                      disabled={primaryQrType === "dynamic" || edit}
                     >
                       Location
                     </TabsTrigger>
@@ -814,12 +919,37 @@ export default function QRAdvanceEditor({
                   {qrType === "url" && (
                     <>
                       <Label className="flex items-center gap-2">
-                        Enter {primaryQrType == "dynamic" && "Destination"} URL
+                        {edit
+                          ? "Redirect URL"
+                          : "Enter" + primaryQrType == "dynamic" &&
+                            "Destination" + " URL"}
                         {primaryQrType == "dynamic" && (
-                          <Tooltip title="You can update this link anytime, without changing the QR image.">
+                          <Tooltip
+                            title={
+                              edit
+                                ? "This is the redirect URL on QR."
+                                : "You can update this link anytime, without changing the QR image."
+                            }
+                          >
                             <HelpCircle size={16} />
                           </Tooltip>
                         )}
+                      </Label>
+                      <Input
+                        value={edit && primaryQrType === "dynamic" ? rUrl : url}
+                        onChange={(e) => setUrl(e.target.value)}
+                        placeholder="https://example.com"
+                        disabled={edit}
+                      />
+                    </>
+                  )}
+                  {qrType === "url" && primaryQrType === "dynamic" && edit && (
+                    <>
+                      <Label className="flex items-center gap-2">
+                        Edit Destination URL
+                        <Tooltip title="You can update this link anytime, without changing the QR image.">
+                          <HelpCircle size={16} />
+                        </Tooltip>
                       </Label>
                       <Input
                         value={url}
@@ -836,6 +966,7 @@ export default function QRAdvanceEditor({
                         value={textValue}
                         onChange={(e) => setTextValue(e.target.value)}
                         placeholder="Enter any text"
+                        disabled={edit}
                       />
                     </>
                   )}
@@ -849,6 +980,7 @@ export default function QRAdvanceEditor({
                         onChange={(e) =>
                           setWifi({ ...wifi, ssid: e.target.value })
                         }
+                        disabled={edit}
                       />
                       <Input
                         placeholder="Password"
@@ -856,6 +988,7 @@ export default function QRAdvanceEditor({
                         onChange={(e) =>
                           setWifi({ ...wifi, password: e.target.value })
                         }
+                        disabled={edit}
                       />
                     </>
                   )}
@@ -869,6 +1002,7 @@ export default function QRAdvanceEditor({
                         onChange={(e) =>
                           setVcard({ ...vcard, firstName: e.target.value })
                         }
+                        disabled={edit}
                       />
                       <Input
                         placeholder="Last Name"
@@ -876,6 +1010,7 @@ export default function QRAdvanceEditor({
                         onChange={(e) =>
                           setVcard({ ...vcard, lastName: e.target.value })
                         }
+                        disabled={edit}
                       />
                       <Input
                         placeholder="Phone"
@@ -883,6 +1018,7 @@ export default function QRAdvanceEditor({
                         onChange={(e) =>
                           setVcard({ ...vcard, phone: e.target.value })
                         }
+                        disabled={edit}
                       />
                       <Input
                         placeholder="Email"
@@ -890,6 +1026,7 @@ export default function QRAdvanceEditor({
                         onChange={(e) =>
                           setVcard({ ...vcard, email: e.target.value })
                         }
+                        disabled={edit}
                       />
                     </>
                   )}
@@ -903,6 +1040,7 @@ export default function QRAdvanceEditor({
                         onChange={(e) =>
                           setEmail({ ...email, to: e.target.value })
                         }
+                        disabled={edit}
                       />
                       <Input
                         placeholder="Subject"
@@ -910,6 +1048,7 @@ export default function QRAdvanceEditor({
                         onChange={(e) =>
                           setEmail({ ...email, subject: e.target.value })
                         }
+                        disabled={edit}
                       />
                       <Input
                         placeholder="Body"
@@ -917,6 +1056,7 @@ export default function QRAdvanceEditor({
                         onChange={(e) =>
                           setEmail({ ...email, body: e.target.value })
                         }
+                        disabled={edit}
                       />
                     </>
                   )}
@@ -930,6 +1070,7 @@ export default function QRAdvanceEditor({
                         onChange={(e) =>
                           setSms({ ...sms, phone: e.target.value })
                         }
+                        disabled={edit}
                       />
                       <Input
                         placeholder="Message"
@@ -937,6 +1078,7 @@ export default function QRAdvanceEditor({
                         onChange={(e) =>
                           setSms({ ...sms, message: e.target.value })
                         }
+                        disabled={edit}
                       />
                     </>
                   )}
@@ -950,6 +1092,7 @@ export default function QRAdvanceEditor({
                         onChange={(e) =>
                           setWhatsapp({ ...whatsapp, phone: e.target.value })
                         }
+                        disabled={edit}
                       />
                       <Input
                         placeholder="Message"
@@ -957,6 +1100,7 @@ export default function QRAdvanceEditor({
                         onChange={(e) =>
                           setWhatsapp({ ...whatsapp, message: e.target.value })
                         }
+                        disabled={edit}
                       />
                     </>
                   )}
@@ -973,6 +1117,7 @@ export default function QRAdvanceEditor({
                             title: e.target.value,
                           })
                         }
+                        disabled={edit}
                       />
                       <Input
                         placeholder="Description"
@@ -983,6 +1128,7 @@ export default function QRAdvanceEditor({
                             description: e.target.value,
                           })
                         }
+                        disabled={edit}
                       />
                       <Input
                         placeholder="Location"
@@ -993,6 +1139,7 @@ export default function QRAdvanceEditor({
                             location: e.target.value,
                           })
                         }
+                        disabled={edit}
                       />
                       <Input
                         type="datetime-local"
@@ -1000,6 +1147,7 @@ export default function QRAdvanceEditor({
                         onChange={(e) =>
                           setEvent({ ...event, start: e.target.value })
                         }
+                        disabled={edit}
                       />
                       <Input
                         type="datetime-local"
@@ -1007,6 +1155,7 @@ export default function QRAdvanceEditor({
                         onChange={(e) =>
                           setEvent({ ...event, end: e.target.value })
                         }
+                        disabled={edit}
                       />
                     </>
                   )}
@@ -1020,6 +1169,7 @@ export default function QRAdvanceEditor({
                         onChange={(e) =>
                           setLocation({ ...location, lat: e.target.value })
                         }
+                        disabled={edit}
                       />
                       <Input
                         placeholder="Longitude"
@@ -1027,6 +1177,7 @@ export default function QRAdvanceEditor({
                         onChange={(e) =>
                           setLocation({ ...location, lng: e.target.value })
                         }
+                        disabled={edit}
                       />
                     </>
                   )}

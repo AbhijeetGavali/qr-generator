@@ -1,23 +1,5 @@
-import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { db } from "@/components/firebase";
-import { useEffect, useState } from "react";
-import QREditor from "@/components/QREditor";
-import QRTable from "@/components/QRTable";
-import ConfirmModal from "@/components/ConfirmModal";
+import { useState } from "react";
 import Header from "@/components/Header";
-import {
-  createDynamicQR,
-  updateDynamicQR,
-  disableDynamicQR,
-} from "@/services/qr.service";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import Sidebar from "@/components/SideBar";
 import { Box } from "@mui/material";
@@ -26,33 +8,9 @@ import QRAdvanceEditor from "@/components/qr/QRAdvanceEditor";
 import { useAuth } from "@/hooks/useAuth";
 import QRDashboardTable from "@/components/qr/QRDashboardTable";
 
-const defaultQRState = {
-  name: "",
-  destinationUrl: "",
-  qrConfig: {
-    dotsOptions: {
-      type: "rounded", // rounded | dots | classy | classy-rounded | square
-      color: "#000000",
-    },
-    cornersSquareOptions: {
-      type: "extra-rounded", // square | extra-rounded | dot
-      color: "#000000",
-    },
-    cornersDotOptions: {
-      type: "dot", // dot | square
-      color: "#000000",
-    },
-    backgroundOptions: {
-      color: "#ffffff",
-    },
-  },
-};
-
 export default function Dashboard() {
-  const [qrs, setQrs] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedQR, setSelectedQR] = useState(null);
-  const [deleteQR, setDeleteQR] = useState<any>(null);
 
   const { user } = useAuth();
 
@@ -82,16 +40,17 @@ export default function Dashboard() {
                 Create QR
               </Button>
             </div>
-            <QRDashboardTable userId={user?.uid} />
-            <ConfirmModal
-              open={!!deleteQR}
-              onCancel={() => setDeleteQR(null)}
-              onConfirm={() => {
-                disableDynamicQR(deleteQR?.id || "");
-                setDeleteQR(null);
+            <QRDashboardTable
+              userId={user?.uid}
+              setSelectedQR={(qr: any) => {
+                setDrawerOpen(true);
+                console.log("Selected QR:", qr);
+                setSelectedQR(qr);
               }}
             />
             <QRAdvanceEditor
+              edit={selectedQR ? true : false}
+              qrData={selectedQR}
               userId={user?.uid}
               drawerOpen={drawerOpen}
               setDrawerOpen={setDrawerOpen}

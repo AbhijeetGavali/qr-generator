@@ -24,14 +24,18 @@ import {
 } from "lucide-react";
 import {
   collection,
+  doc,
   onSnapshot,
   orderBy,
   query,
+  serverTimestamp,
+  updateDoc,
   where,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { ActionMenu } from "../ui/ActionMenu";
 
-export default function QRDashboardTable({ userId }: any) {
+export default function QRDashboardTable({ userId, setSelectedQR }: any) {
   const [qrcodes, setQrcodes] = useState<Array<any>>([]);
 
   useEffect(() => {
@@ -53,6 +57,40 @@ export default function QRDashboardTable({ userId }: any) {
 
     return () => unsubscribe();
   }, [userId]);
+
+  const deleteSelectedQR = async (qrId: string) => {
+    try {
+      // Delete the QR code document from Firestore
+      const qrRef = doc(db, "qrcodes", qrId);
+
+      // Perform soft delete by updating flags
+      await updateDoc(qrRef, {
+        isActive: false,
+        deletedAt: serverTimestamp(),
+      });
+
+      console.log("QR code deleted successfully");
+    } catch (error) {
+      console.error("Error deleting QR code: ", error);
+    }
+  };
+
+  const activateSelectedQR = async (qrId: string) => {
+    try {
+      // Delete the QR code document from Firestore
+      const qrRef = doc(db, "qrcodes", qrId);
+
+      // Perform soft delete by updating flags
+      await updateDoc(qrRef, {
+        isActive: true,
+      });
+
+      console.log("QR code activated successfully");
+    } catch (error) {
+      console.error("Error activating QR code: ", error);
+    }
+  };
+
   return (
     <TableContainer
       component={Paper}
@@ -191,9 +229,12 @@ export default function QRDashboardTable({ userId }: any) {
                     <ExternalLink size={18} />
                   </IconButton>
                 </Tooltip>
-                <IconButton size="small" onClick={() => {}}>
-                  <MoreVertical size={18} />
-                </IconButton>
+                <ActionMenu
+                  qr={qr}
+                  onEdit={setSelectedQR}
+                  onDelete={deleteSelectedQR}
+                  onActivate={activateSelectedQR}
+                />
               </TableCell>
             </TableRow>
           ))}
