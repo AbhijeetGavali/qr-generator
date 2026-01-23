@@ -17,7 +17,6 @@ export function useSubscriptionStatus(uid: string | undefined) {
       collection(db, "subscriptions"),
       where("uid", "==", uid),
       where("status", "==", "SUCCESS"),
-      where("isActive", "==", "true"),
     );
 
     const unsubscribe = onSnapshot(
