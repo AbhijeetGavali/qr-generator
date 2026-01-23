@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { db } from "@/components/firebase";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { useAuth } from "./useAuth";
 
-export function useSubscriptionStatus(uid: string | undefined) {
+export function useSubscriptionStatus() {
   const [isActive, setIsActive] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
-    if (!uid) {
+    if (!user?.uid) {
       setLoading(false);
       return;
     }
@@ -15,8 +17,9 @@ export function useSubscriptionStatus(uid: string | undefined) {
     // Query the collection for a document belonging to this user with SUCCESS status
     const q = query(
       collection(db, "subscriptions"),
-      where("uid", "==", uid),
-      where("status", "==", "SUCCESS"),
+      where("uid", "==", user.uid),
+      where("status", "==", "success"),
+      where("isActive", "==", "true"),
     );
 
     const unsubscribe = onSnapshot(
@@ -33,7 +36,7 @@ export function useSubscriptionStatus(uid: string | undefined) {
     );
 
     return () => unsubscribe();
-  }, [uid]);
+  }, [user]);
 
   return { isActive, loading, status: isActive ? "SUCCESS" : "Waiting" };
 }

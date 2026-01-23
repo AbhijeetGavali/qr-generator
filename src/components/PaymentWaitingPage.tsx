@@ -61,7 +61,7 @@ export default function PaymentWaitingPage() {
                 >
                   Subscribe
                   {loading && (
-                    <Loader className="animate-spin text-blue-500 w-6 h-6" />
+                    <Loader className="animate-spin text-blue-500 w-6 h-6 ml-2" />
                   )}
                 </Button>
               </>

@@ -16,7 +16,7 @@ export default function Dashboard() {
   const [selectedQR, setSelectedQR] = useState(null);
 
   const { user } = useAuth();
-  const { isActive, loading, status } = useSubscriptionStatus(user?.uid);
+  const { isActive, loading, status } = useSubscriptionStatus();
 
   if (loading) return <PaymentLoader message="waiting for payment check" />;
 
