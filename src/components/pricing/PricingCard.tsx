@@ -1,6 +1,11 @@
 import { Button } from "@/components/ui/button";
 import FeatureItem from "./FeatureItem";
 import { motion } from "framer-motion";
+import Subscribe from "@/pages/Subscribe";
+import { getAuth, User } from "firebase/auth";
+import { subscribe } from "./Subscription";
+import { useState } from "react";
+import { Loader } from "lucide-react";
 
 interface PricingCardProps {
   title: string;
@@ -33,6 +38,11 @@ export default function PricingCard({
     },
   };
 
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  const [loading, setLoading] = useState(false);
+
   return (
     <motion.div
       className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 flex flex-col cursor-pointer"
@@ -59,9 +69,21 @@ export default function PricingCard({
         ))}
       </ul>
 
-      <a href={ctaLink}>
-        <Button className="min-w-full">{ctaLabel}</Button>
-      </a>
+      {title != "Pro" && !user ? (
+        <a href={ctaLink}>
+          <Button className="min-w-full">{ctaLabel}</Button>
+        </a>
+      ) : (
+        <Button
+          onClick={() => {
+            setLoading(true);
+            subscribe(auth.currentUser as User);
+          }}
+        >
+          {ctaLabel}{" "}
+          {loading && <Loader className="animate-spin text-blue-500 w-6 h-6" />}
+        </Button>
+      )}
     </motion.div>
   );
 }

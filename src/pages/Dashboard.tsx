@@ -2,17 +2,25 @@ import { useState } from "react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import Sidebar from "@/components/SideBar";
-import { Box } from "@mui/material";
+import { Box, CircularProgress, Typography } from "@mui/material";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import QRAdvanceEditor from "@/components/qr/QRAdvanceEditor";
 import { useAuth } from "@/hooks/useAuth";
 import QRDashboardTable from "@/components/qr/QRDashboardTable";
+import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
+import { PaymentLoader } from "@/components/PaymentLoader";
+import PaymentWaitingPage from "@/components/PaymentWaitingPage";
 
 export default function Dashboard() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedQR, setSelectedQR] = useState(null);
 
   const { user } = useAuth();
+  const { isActive, loading, status } = useSubscriptionStatus(user?.uid);
+
+  if (loading) return <PaymentLoader message="waiting for payment check" />;
+
+  if (!isActive) return <PaymentWaitingPage />;
 
   return (
     <>

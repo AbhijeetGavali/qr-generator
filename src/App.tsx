@@ -12,11 +12,16 @@ import ContactSalesPage from "./pages/ContactSales";
 import Login from "./pages/Login";
 import SignupPage from "./pages/SignUp";
 import "./components/firebase";
-import { ProtectedDashboardWrapper } from "./pages/ProtectedRoute";
+import ProtectedRoute, {
+  ProtectedDashboardWrapper,
+} from "./pages/ProtectedRoute";
 import Home from "./pages/home";
 import Dashboard from "./pages/Dashboard";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import Redirect from "./pages/Redirect";
+import Subscribe from "./pages/Subscribe";
+import PayUSuccess from "./pages/PayUSuccess";
+import PayUFailure from "./pages/PayUFailure";
 
 function Router() {
   return (
@@ -28,6 +33,9 @@ function Router() {
         componentLogedIn={Dashboard}
       />
       {/* 🔐 Protected */}
+      <ProtectedRoute path="/subscribe" component={Subscribe} />
+      <ProtectedRoute path="/payu/success" component={PayUSuccess} />
+      <ProtectedRoute path="/payu/failure" component={PayUFailure} />
 
       {/* 🌐 Public */}
       <Route path="/forgot-password" component={ForgotPasswordPage} />
