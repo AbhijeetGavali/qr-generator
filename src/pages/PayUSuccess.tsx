@@ -110,7 +110,7 @@ export default function PayUSuccess() {
                 textTransform: "none",
                 fontWeight: "bold",
               }}
-              onClick={() => setLocation("/dashboard")}
+              onClick={() => setLocation("/")}
             >
               Go to Dashboard
             </Button>

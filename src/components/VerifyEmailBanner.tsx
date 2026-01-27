@@ -41,7 +41,7 @@ export default function VerifyEmailBanner() {
       setMessage("");
 
       await sendEmailVerification(user, {
-        url: `${window.location.origin}/dashboard`,
+        url: `${window.location.origin}`,
       });
 
       setMessage("Verification email sent. Please check your inbox.");
