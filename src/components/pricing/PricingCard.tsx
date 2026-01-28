@@ -79,9 +79,10 @@ export default function PricingCard({
             setLoading(true);
             subscribe(auth.currentUser as User);
           }}
+          disabled={loading}
         >
           {ctaLabel}{" "}
-          {loading && <Loader className="animate-spin text-blue-500 w-6 h-6" />}
+          {loading && <Loader className="animate-spin text-blue-500 w-6 h-6 ml-2" />}
         </Button>
       )}
     </motion.div>

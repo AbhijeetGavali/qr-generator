@@ -46,6 +46,7 @@ export default function PaymentWaitingPage() {
                   variant="outlined"
                   onClick={() => window.location.reload()}
                   className="rounded-xl border-slate-200 text-slate-600 normal-case font-semibold"
+                  disabled={loading}
                 >
                   I've already paid (Refresh)
                 </Button>
@@ -54,6 +55,7 @@ export default function PaymentWaitingPage() {
                   variant="contained"
                   fullWidth
                   className="rounded-xl border-slate-200 text-slate-600 normal-case font-semibold mt-4"
+                  disabled={loading}
                   onClick={() => {
                     setLoading(true);
                     subscribe(auth?.user as User);
