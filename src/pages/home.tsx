@@ -26,6 +26,9 @@ import UseCasesSection from "@/components/UseCasesSection";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
+import { Dialog, DialogContent, DialogTitle } from "@mui/material";
+import { DynamicPromoCTA } from "@/components/DynamicPromoCTA";
+import { Link } from "wouter";
 
 type QRType =
   | "url"
@@ -79,6 +82,8 @@ const containerVariants = {
 };
 
 export default function Home() {
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [hasSeenWarning, setHasSeenWarning] = useState(false);
   const [url, setUrl] = useState("");
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -574,7 +579,7 @@ END:VCALENDAR
 
       toast({
         title: "QR Code Generated",
-        description: "QR code generated successfully.",
+        description: "QR code generated successfully and saved to history!",
       });
     } catch (err) {
       setError("Failed to generate QR code.");
@@ -600,6 +605,12 @@ END:VCALENDAR
   const downloadAs = useCallback(
     async (format: "png" | "jpeg" | "svg") => {
       if (!qrDataUrl) return;
+
+      if (!hasSeenWarning) {
+        setShowUpgradeModal(true);
+        setHasSeenWarning(true);
+        return;
+      }
 
       try {
         let href = "";
@@ -641,7 +652,7 @@ END:VCALENDAR
         });
       }
     },
-    [qrDataUrl, size, fgColor, bgColor, history, toast],
+    [qrDataUrl, size, fgColor, bgColor, history, toast, hasSeenWarning],
   );
 
   const copyToClipboard = useCallback(async () => {
@@ -700,12 +711,6 @@ END:VCALENDAR
       await copyToClipboard();
     }
   }, [qrDataUrl, qrType, copyToClipboard, toast]);
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      generateQRCode();
-    }
-  };
 
   const features = [
     {
@@ -1346,6 +1351,65 @@ END:VCALENDAR
               </Card>
             </div>
           </div>
+          <DynamicPromoCTA />
+          <Dialog
+            open={showUpgradeModal}
+            onClose={() => setShowUpgradeModal(false)}
+          >
+            <DialogContent className="sm:max-w-md">
+              <div>
+                <div className="mx-auto w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mb-4">
+                  <Zap className="w-6 h-6 text-amber-600 fill-amber-600" />
+                </div>
+                <DialogTitle className="text-center text-xl">
+                  Wait! This is a Static QR Code
+                </DialogTitle>
+                <div className="text-center pt-2">
+                  If you print this and your link changes,{" "}
+                  <strong>the QR code will stop working.</strong> You cannot
+                  edit it later.
+                </div>
+              </div>
+              <div className="space-y-4 py-4">
+                <div className="bg-muted p-4 rounded-lg border border-border">
+                  <p className="text-sm font-semibold mb-1">
+                    Dynamic QRs give you:
+                  </p>
+                  <ul className="text-xs space-y-2 text-muted-foreground">
+                    <li className="flex items-center gap-2">
+                      <Check className="w-3 h-3 text-green-500" /> Editable
+                      destination URLs
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-3 h-3 text-green-500" /> Scan
+                      analytics & GPS locations
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-3 h-3 text-green-500" /> Higher scan
+                      reliability
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Link href="/pricing">
+                  <Button className="w-full bg-primary">
+                    Upgrade to Dynamic QR
+                  </Button>
+                </Link>
+                <Button
+                  variant="ghost"
+                  className="w-full text-xs"
+                  onClick={() => {
+                    setShowUpgradeModal(false);
+                    downloadAs("png");
+                  }}
+                >
+                  No thanks, I'll risk it with Static
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </section>
         <AdSlot size="leaderboard" className="py-6 px-4" adSlot="6997057063" />
         <UseCasesSection />

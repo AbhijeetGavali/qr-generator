@@ -19,13 +19,14 @@ import {
 } from "lucide-react";
 import { Drawer, Tooltip, Typography } from "@mui/material";
 import { QRCustomizationSection } from "./QRCustomizationSection";
-import { CustomizationValue } from "@/types/qrCustomization";
+import { CustomizationValue, QRFrameConfig } from "@/types/qrCustomization";
 import { SliderWithSteps } from "../ui/SliderWithSteps";
 import { QRLogoCustomizationSection } from "./QRLogoCustomizationSection";
 
 // Firebase Imports
 import { db } from "../firebase";
 import { collection, serverTimestamp, doc, setDoc } from "firebase/firestore";
+import { QRFrameSection } from "./QRFrameSection";
 
 type QRType =
   | "url"
@@ -112,6 +113,37 @@ export default function QRAdvanceEditor({
       mode: "single",
       singleColor: "#FFFFFF",
       gradient: { from: "#FFFFFF", to: "#FFFFFF", rotation: 0 },
+    },
+  });
+
+  const [frame, setFrame] = useState<QRFrameConfig>({
+    enabled: true,
+    type: "none",
+    text: "",
+    icon: "scan",
+    backgroundColor: {
+      style: "",
+      color: {
+        mode: "single",
+        singleColor: "#000000",
+        gradient: { from: "#000000", to: "#270707", rotation: 0 },
+      },
+    },
+    borderColor: {
+      style: "",
+      color: {
+        mode: "single",
+        singleColor: "#000000",
+        gradient: { from: "#000000", to: "#270707", rotation: 0 },
+      },
+    },
+    textColor: {
+      style: "",
+      color: {
+        mode: "single",
+        singleColor: "#FFFFFF",
+        gradient: { from: "#FFFFFF", to: "#797979", rotation: 0 },
+      },
     },
   });
 
@@ -913,7 +945,6 @@ export default function QRAdvanceEditor({
                   </TabsList>
                 </Tabs>
               </div>
-
               <div className="space-y-4 mt-2">
                 <div className="flex flex-col gap-3 pt-4">
                   {qrType === "url" && (
@@ -921,8 +952,9 @@ export default function QRAdvanceEditor({
                       <Label className="flex items-center gap-2">
                         {edit
                           ? "Redirect URL"
-                          : "Enter" + primaryQrType == "dynamic" &&
-                            "Destination" + " URL"}
+                          : "Enter" +
+                            (primaryQrType == "dynamic" ? " Destination" : "") +
+                            " URL"}
                         {primaryQrType == "dynamic" && (
                           <Tooltip
                             title={
@@ -1184,8 +1216,14 @@ export default function QRAdvanceEditor({
                 </div>
                 {error && <p className="text-sm text-destructive">{error}</p>}
               </div>
-
-              <div className="border-border pt-10">
+              <div className="space-y-4 mt-12">
+                <div className="flex items-center gap-2 mb-2">
+                  <Settings className="w-4 h-4" />
+                  <span className="text-sm font-medium">Custom Frame</span>
+                </div>
+                <QRFrameSection value={frame} onChange={setFrame} />
+              </div>
+              <div className="border-border mt-8">
                 <div className="flex items-center gap-2 mb-4">
                   <Settings className="w-4 h-4" />
                   <span className="text-sm font-medium">Customization</span>

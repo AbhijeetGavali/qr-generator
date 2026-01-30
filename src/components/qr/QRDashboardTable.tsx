@@ -198,11 +198,23 @@ export default function QRDashboardTable({ userId, setSelectedQR }: any) {
               {/* Status */}
               <TableCell>
                 <Chip
-                  label={qr.isActive ? "Active" : "Paused"}
+                  label={
+                    qr.primaryType === "dynamic"
+                      ? qr.isActive
+                        ? "Active"
+                        : "Paused"
+                      : "Static"
+                  }
                   size="small"
                   sx={{
-                    bgcolor: qr.isActive ? "success.lighter" : "error.lighter",
-                    color: qr.isActive ? "success.dark" : "error.dark",
+                    bgcolor:
+                      qr.primaryType === "static" || qr.isActive
+                        ? "success.lighter"
+                        : "error.lighter",
+                    color:
+                      qr.primaryType === "static" || qr.isActive
+                        ? "success.dark"
+                        : "error.dark",
                     fontSize: "0.75rem",
                   }}
                 />
@@ -211,9 +223,11 @@ export default function QRDashboardTable({ userId, setSelectedQR }: any) {
               {/* Date */}
               <TableCell>
                 <Typography variant="caption">
-                  {qr.lastScanned
-                    ? new Date(qr.lastScanned.seconds * 1000).toLocaleString()
-                    : "No scans yet"}
+                  {qr.primaryType === "static"
+                    ? "Static QR"
+                    : qr.lastScanned
+                      ? new Date(qr.lastScanned.seconds * 1000).toLocaleString()
+                      : "No scans yet"}
                 </Typography>
               </TableCell>
 
