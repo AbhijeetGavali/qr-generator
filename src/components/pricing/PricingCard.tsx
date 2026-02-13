@@ -6,6 +6,7 @@ import { getAuth, User } from "firebase/auth";
 import { subscribe } from "./Subscription";
 import { useState } from "react";
 import { Loader } from "lucide-react";
+import { PhonePopup } from "../PhonePopupProps";
 
 interface PricingCardProps {
   title: string;
@@ -24,6 +25,11 @@ export default function PricingCard({
   ctaLabel,
   ctaLink,
 }: PricingCardProps) {
+  const [isPhoneModalOpen, setPhoneModalOpen] = useState(false);
+  const handlePhoneSubmit = (phone: string) => {
+    setPhoneModalOpen(false);
+    subscribe(auth.currentUser as User, phone);
+  };
   const cardVariants = {
     hidden: { opacity: 0, y: 30 },
     visible: {
@@ -69,7 +75,7 @@ export default function PricingCard({
         ))}
       </ul>
 
-      {title != "Pro" && !user ? (
+      {title != "Pro" || !user ? (
         <a href={ctaLink}>
           <Button className="min-w-full">{ctaLabel}</Button>
         </a>
@@ -77,14 +83,25 @@ export default function PricingCard({
         <Button
           onClick={() => {
             setLoading(true);
-            subscribe(auth.currentUser as User);
+            if (!user?.phoneNumber) {
+              setPhoneModalOpen(true);
+            } else {
+              subscribe(user);
+            }
           }}
           disabled={loading}
         >
           {ctaLabel}{" "}
-          {loading && <Loader className="animate-spin text-blue-500 w-6 h-6 ml-2" />}
+          {loading && (
+            <Loader className="animate-spin text-blue-500 w-6 h-6 ml-2" />
+          )}
         </Button>
       )}
+      <PhonePopup
+        open={isPhoneModalOpen}
+        onClose={() => setPhoneModalOpen(false)}
+        onConfirm={handlePhoneSubmit}
+      />
     </motion.div>
   );
 }

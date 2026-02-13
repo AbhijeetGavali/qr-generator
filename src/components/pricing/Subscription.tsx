@@ -2,16 +2,20 @@ import { httpsCallable } from "firebase/functions";
 import { functions } from "../firebase";
 import { User } from "firebase/auth";
 
-export async function subscribe(user: User) {
+export async function subscribe(user: User, phone?: string) {
   try {
     await user.getIdToken(true);
 
     const fn = httpsCallable(functions, "createSubscription");
+    if (!user.phoneNumber && !phone) {
+      throw new Error("Phone number is required");
+    }
 
     const res: any = await fn({
       firstname: user.displayName?.split(" ")[0] || "Test",
       lastname: user.displayName?.split(" ")[1] || "User",
       email: user.email || "test@example.com",
+      phone: phone || user.phoneNumber || "9999999999",
     });
 
     const form = document.createElement("form");

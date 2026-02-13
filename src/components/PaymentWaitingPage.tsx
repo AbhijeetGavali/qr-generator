@@ -6,10 +6,16 @@ import { subscribe } from "./pricing/Subscription";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { User } from "firebase/auth";
+import { PhonePopup } from "./PhonePopupProps";
 
 export default function PaymentWaitingPage() {
   const [loading, setLoading] = useState(false);
+  const [isPhoneModalOpen, setPhoneModalOpen] = useState(false);
   const auth = useAuth();
+  const handlePhoneSubmit = (phone: string) => {
+    setPhoneModalOpen(false);
+    subscribe(auth?.user as User, phone);
+  };
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -58,7 +64,11 @@ export default function PaymentWaitingPage() {
                   disabled={loading}
                   onClick={() => {
                     setLoading(true);
-                    subscribe(auth?.user as User);
+                    if (!auth?.user?.phoneNumber) {
+                      setPhoneModalOpen(true);
+                    } else {
+                      subscribe(auth?.user as User);
+                    }
                   }}
                 >
                   Subscribe
@@ -66,6 +76,11 @@ export default function PaymentWaitingPage() {
                     <Loader className="animate-spin text-blue-500 w-6 h-6 ml-2" />
                   )}
                 </Button>
+                <PhonePopup
+                  open={isPhoneModalOpen}
+                  onClose={() => setPhoneModalOpen(false)}
+                  onConfirm={handlePhoneSubmit}
+                />
               </>
             </CardContent>
           </Card>
