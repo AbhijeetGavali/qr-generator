@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import {
   BarChart2,
+  Activity,
   MoreVertical,
   ExternalLink,
   QrCode,
@@ -34,9 +35,12 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { ActionMenu } from "../ui/ActionMenu";
+import { useLocation } from "wouter";
+import type { QrCodeDoc } from "@/types/qr";
 
 export default function QRDashboardTable({ userId, setSelectedQR }: any) {
   const [qrcodes, setQrcodes] = useState<Array<any>>([]);
+  const [, navigate] = useLocation();
 
   useEffect(() => {
     if (!userId) return;
@@ -243,6 +247,35 @@ export default function QRDashboardTable({ userId, setSelectedQR }: any) {
                     <ExternalLink size={18} />
                   </IconButton>
                 </Tooltip>
+                {qr.primaryType === "dynamic" && (
+                  <Tooltip title="View analytics">
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const prefill: Partial<QrCodeDoc> = {
+                          qrId: qr.qrId,
+                          ownerId: qr.ownerId,
+                          name: qr.name,
+                          primaryType: qr.primaryType,
+                          scanCount: qr.scanCount,
+                          lastScanned: qr.lastScanned,
+                          analytics: qr.analytics,
+                        };
+                        try {
+                          sessionStorage.setItem(
+                            `qr-analytics-prefill:${qr.qrId}`,
+                            JSON.stringify(prefill),
+                          );
+                        } catch {
+                          // ignore storage failures
+                        }
+                        navigate(`/dashboard/analytics/${qr.qrId}`);
+                      }}
+                    >
+                      <Activity size={18} />
+                    </IconButton>
+                  </Tooltip>
+                )}
                 <ActionMenu
                   qr={qr}
                   onEdit={setSelectedQR}

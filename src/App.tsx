@@ -22,6 +22,8 @@ import Redirect from "./pages/Redirect";
 import Subscribe from "./pages/Subscribe";
 import PayUSuccess from "./pages/PayUSuccess";
 import PayUFailure from "./pages/PayUFailure";
+import AnalyticsDetail from "./pages/AnalyticsDetail";
+import Analytics from "./pages/Analytics";
 
 function Router() {
   return (
@@ -36,6 +38,8 @@ function Router() {
       <ProtectedRoute path="/subscribe" component={Subscribe} />
       <ProtectedRoute path="/payu/success" component={PayUSuccess} />
       <ProtectedRoute path="/payu/failure" component={PayUFailure} />
+      <ProtectedRoute path="/analytics" component={Analytics} />
+      <ProtectedRoute path="/dashboard/analytics/:qrId" component={AnalyticsDetail} />
 
       {/* 🌐 Public */}
       <Route path="/forgot-password" component={ForgotPasswordPage} />
