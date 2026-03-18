@@ -3,11 +3,12 @@ import Sidebar from "@/components/SideBar";
 import { db } from "@/components/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import type { QrCodeDoc } from "@/types/qr";
+import { Button } from "@/components/ui/button";
 import { Box, Card, CardContent, CircularProgress, Typography } from "@mui/material";
 import { doc, getDoc } from "firebase/firestore";
 import { format, subDays } from "date-fns";
 import { useEffect, useMemo, useState } from "react";
-import { useRoute } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import {
   CartesianGrid,
   Legend,
@@ -21,6 +22,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { ArrowLeft, CalendarClock, Computer, Smartphone, TrendingUp } from "lucide-react";
 
 type LoadState =
   | { status: "loading"; prefill?: Partial<QrCodeDoc> }
@@ -55,10 +57,54 @@ function mapToPieData(map?: Record<string, number>) {
     .sort((a, b) => b.value - a.value);
 }
 
+function sumPie(data: Array<{ value: number }>) {
+  return data.reduce((acc, x) => acc + toNumber(x.value), 0);
+}
+
+function PieCaptionList({
+  data,
+}: {
+  data: Array<{ name: string; value: number }>;
+}) {
+  const total = sumPie(data);
+  return (
+    <Box sx={{ mt: 1.5, display: "flex", flexDirection: "column", gap: 0.75 }}>
+      {data.map((item, idx) => {
+        const pct = total > 0 ? Math.round((item.value / total) * 100) : 0;
+        return (
+          <Box
+            key={`${item.name}-${idx}`}
+            sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+              <Box
+                sx={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: 999,
+                  bgcolor: PIE_COLORS[idx % PIE_COLORS.length],
+                  flex: "0 0 auto",
+                }}
+              />
+              <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                {item.name}
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ flex: "0 0 auto" }}>
+              {item.value} {total > 0 ? `(${pct}%)` : ""}
+            </Typography>
+          </Box>
+        );
+      })}
+    </Box>
+  );
+}
+
 export default function AnalyticsDetail() {
   const [, params] = useRoute("/dashboard/analytics/:qrId");
   const qrId = params?.qrId;
   const { user } = useAuth();
+  const [, navigate] = useLocation();
 
   const [state, setState] = useState<LoadState>(() => {
     if (!qrId) return { status: "not-found" };
@@ -181,13 +227,26 @@ export default function AnalyticsDetail() {
 
           {state.status === "ready" && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <Box>
+              <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2 }}>
+                <Box>
                 <Typography variant="h5" sx={{ fontWeight: 800 }}>
                   Analytics{derived.qrName ? ` — ${derived.qrName}` : ""}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   QR ID: {qrId} {derived.primaryType !== "dynamic" ? "• (Static QR)" : ""}
                 </Typography>
+                </Box>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (window.history.length > 1) window.history.back();
+                    else navigate("/");
+                  }}
+                  className="gap-2"
+                >
+                  <ArrowLeft size={16} />
+                  Back
+                </Button>
               </Box>
 
               <Box
@@ -202,9 +261,12 @@ export default function AnalyticsDetail() {
                     <Typography variant="caption" color="text.secondary">
                       Total scans
                     </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 800 }}>
-                      {derived.totalScans}
-                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
+                      <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                        {derived.totalScans}
+                      </Typography>
+                      <TrendingUp size={18} className="text-muted-foreground" />
+                    </Box>
                   </CardContent>
                 </Card>
                 <Card variant="outlined">
@@ -212,9 +274,12 @@ export default function AnalyticsDetail() {
                     <Typography variant="caption" color="text.secondary">
                       Mobile scans
                     </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 800 }}>
-                      {derived.mobileScans}
-                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
+                      <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                        {derived.mobileScans}
+                      </Typography>
+                      <Smartphone size={18} className="text-muted-foreground" />
+                    </Box>
                   </CardContent>
                 </Card>
                 <Card variant="outlined">
@@ -222,9 +287,12 @@ export default function AnalyticsDetail() {
                     <Typography variant="caption" color="text.secondary">
                       Desktop scans
                     </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 800 }}>
-                      {derived.desktopScans}
-                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
+                      <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                        {derived.desktopScans}
+                      </Typography>
+                      <Computer size={18} className="text-muted-foreground" />
+                    </Box>
                   </CardContent>
                 </Card>
                 <Card variant="outlined">
@@ -232,9 +300,12 @@ export default function AnalyticsDetail() {
                     <Typography variant="caption" color="text.secondary">
                       Last scan at
                     </Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 700 }}>
-                      {derived.lastScanAt ? derived.lastScanAt.toLocaleString() : "No scans yet"}
-                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
+                      <Typography variant="body1" sx={{ fontWeight: 700 }}>
+                        {derived.lastScanAt ? derived.lastScanAt.toLocaleString() : "No scans yet"}
+                      </Typography>
+                      <CalendarClock size={18} className="text-muted-foreground" />
+                    </Box>
                   </CardContent>
                 </Card>
               </Box>
@@ -289,27 +360,30 @@ export default function AnalyticsDetail() {
                         No device data yet.
                       </Typography>
                     ) : (
-                      <Box sx={{ width: "100%", height: 260 }}>
-                        <ResponsiveContainer>
-                          <PieChart>
-                            <Pie
-                              data={derived.devicesPie}
-                              dataKey="value"
-                              nameKey="name"
-                              outerRadius={90}
-                              label
-                            >
-                              {derived.devicesPie.map((_, idx) => (
-                                <Cell
-                                  key={`cell-device-${idx}`}
-                                  fill={PIE_COLORS[idx % PIE_COLORS.length]}
-                                />
-                              ))}
-                            </Pie>
-                            <Tooltip />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </Box>
+                      <>
+                        <Box sx={{ width: "100%", height: 260 }}>
+                          <ResponsiveContainer>
+                            <PieChart>
+                              <Pie
+                                data={derived.devicesPie}
+                                dataKey="value"
+                                nameKey="name"
+                                outerRadius={90}
+                                labelLine={false}
+                              >
+                                {derived.devicesPie.map((_, idx) => (
+                                  <Cell
+                                    key={`cell-device-${idx}`}
+                                    fill={PIE_COLORS[idx % PIE_COLORS.length]}
+                                  />
+                                ))}
+                              </Pie>
+                              <Tooltip />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </Box>
+                        <PieCaptionList data={derived.devicesPie} />
+                      </>
                     )}
                   </CardContent>
                 </Card>
@@ -324,27 +398,30 @@ export default function AnalyticsDetail() {
                         No browser data yet.
                       </Typography>
                     ) : (
-                      <Box sx={{ width: "100%", height: 260 }}>
-                        <ResponsiveContainer>
-                          <PieChart>
-                            <Pie
-                              data={derived.browsersPie}
-                              dataKey="value"
-                              nameKey="name"
-                              outerRadius={90}
-                              label
-                            >
-                              {derived.browsersPie.map((_, idx) => (
-                                <Cell
-                                  key={`cell-browser-${idx}`}
-                                  fill={PIE_COLORS[idx % PIE_COLORS.length]}
-                                />
-                              ))}
-                            </Pie>
-                            <Tooltip />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </Box>
+                      <>
+                        <Box sx={{ width: "100%", height: 260 }}>
+                          <ResponsiveContainer>
+                            <PieChart>
+                              <Pie
+                                data={derived.browsersPie}
+                                dataKey="value"
+                                nameKey="name"
+                                outerRadius={90}
+                                labelLine={false}
+                              >
+                                {derived.browsersPie.map((_, idx) => (
+                                  <Cell
+                                    key={`cell-browser-${idx}`}
+                                    fill={PIE_COLORS[idx % PIE_COLORS.length]}
+                                  />
+                                ))}
+                              </Pie>
+                              <Tooltip />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </Box>
+                        <PieCaptionList data={derived.browsersPie} />
+                      </>
                     )}
                   </CardContent>
                 </Card>
