@@ -103,6 +103,7 @@ export default function Home() {
 
   const [qrType, setQrType] = useState<QRType>("url");
   const [textValue, setTextValue] = useState("");
+  const [autoGenerateUrl, setAutoGenerateUrl] = useState<string | null>(null);
 
   const [wifi, setWifi] = useState({
     ssid: "",
@@ -601,6 +602,23 @@ END:VCALENDAR
     logoShape,
     toast,
   ]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlParam = params.get("url");
+    if (urlParam) {
+      setUrl(urlParam);
+      setQrType("url");
+      setAutoGenerateUrl(urlParam);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (autoGenerateUrl && url === autoGenerateUrl) {
+      generateQRCode();
+      setAutoGenerateUrl(null);
+    }
+  }, [autoGenerateUrl, url, generateQRCode]);
 
   const downloadAs = useCallback(
     async (format: "png" | "jpeg" | "svg") => {
